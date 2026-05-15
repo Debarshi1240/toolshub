@@ -102,7 +102,7 @@ export default function DownloaderPage() {
       </div>
 
       {/* URL Input */}
-      <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+      <div className="rounded-2xl border border bg-card p-6 space-y-4">
         <div className="flex gap-3">
           <input
             id="video-url-input"
@@ -111,7 +111,7 @@ export default function DownloaderPage() {
             onChange={(e) => setUrl(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && fetchInfo()}
             placeholder="Paste YouTube, Instagram, or Twitter URL…"
-            className="flex-1 rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all"
+            className="flex-1 rounded-xl border border bg-background px-4 py-3 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all"
           />
           <button
             onClick={fetchInfo}
@@ -126,7 +126,7 @@ export default function DownloaderPage() {
         <AnimatePresence>
           {videoInfo && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-              <div className="flex gap-4 rounded-xl border border-border bg-background/50 p-4">
+              <div className="flex gap-4 rounded-xl border border bg-background/50 p-4">
                 {videoInfo.thumbnail && (
                   <div className="relative h-20 w-32 overflow-hidden rounded-lg shrink-0">
                     <Image src={videoInfo.thumbnail} alt={videoInfo.title} fill className="object-cover" unoptimized />
@@ -155,7 +155,7 @@ export default function DownloaderPage() {
                       className={`relative flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all ${
                         quality === q.id
                           ? 'border-brand-500 bg-brand-500/10 text-brand-400'
-                          : 'border-border bg-card text-muted-foreground hover:border-brand-400/50'
+                          : 'border bg-card text-muted-foreground hover:border-brand-400/50'
                       }`}
                     >
                       {q.icon} {q.label}

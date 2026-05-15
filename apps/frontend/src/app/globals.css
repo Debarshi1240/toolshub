@@ -56,7 +56,7 @@
     --surface-border: 215 27.9% 18%;
   }
 
-  * { @apply border-border; }
+  * { border-color: hsl(var(--border)); }
   body {
     @apply bg-background text-foreground font-sans antialiased;
     background-image:
@@ -76,9 +76,9 @@
 
   /* ── Tool Card ── */
   .tool-card {
-    @apply relative overflow-hidden rounded-2xl border border-border bg-card p-6
+    @apply relative overflow-hidden rounded-2xl border bg-card p-6
            transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl
-           hover:border-brand-400/40 cursor-pointer group;
+           hover:border-brand-400/40 cursor-pointer;
   }
 
   .tool-card::before {
@@ -100,7 +100,7 @@
   /* ── Upload Zone ── */
   .upload-zone {
     @apply relative flex flex-col items-center justify-center gap-4 rounded-2xl border-2
-           border-dashed border-border p-12 text-center transition-all duration-200
+           border-dashed border p-12 text-center transition-all duration-200
            hover:border-brand-400 hover:bg-brand-50/5 cursor-pointer;
   }
   .upload-zone.drag-active {

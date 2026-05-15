@@ -101,7 +101,7 @@ export function PdfToolPage({
       </div>
 
       {/* Upload */}
-      <div className="rounded-2xl border border-border bg-card p-6 space-y-6">
+      <div className="rounded-2xl border border bg-card p-6 space-y-6">
         <FileUploader
           accept={accept || { 'application/pdf': ['.pdf'] }}
           multiple={multiple}
@@ -168,7 +168,7 @@ export function PdfToolPage({
       </AnimatePresence>
 
       {/* Info */}
-      <div className="mt-8 rounded-2xl border border-border bg-card/50 p-4">
+      <div className="mt-8 rounded-2xl border border bg-card/50 p-4">
         <p className="text-xs text-muted-foreground text-center">
           🔒 Your files are processed securely and automatically deleted after 1 hour. We never store your data.
         </p>

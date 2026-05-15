@@ -74,7 +74,7 @@ export default function HomePage() {
             <Link href="/tools/merge-pdf" className="btn-gradient text-base px-8 py-3.5">
               Start for Free <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/plagiarism" className="flex items-center gap-2 rounded-xl px-8 py-3.5 text-base font-semibold border border-border hover:bg-accent transition-colors">
+            <Link href="/plagiarism" className="flex items-center gap-2 rounded-xl px-8 py-3.5 text-base font-semibold border border hover:bg-accent transition-colors">
               <Brain className="h-4 w-4 text-violet-400" /> Try AI Checker
             </Link>
           </motion.div>
@@ -113,7 +113,7 @@ export default function HomePage() {
           >
             {ALL_TOOLS.map((tool) => (
               <motion.div key={tool.id} variants={stagger.item}>
-                <Link href={tool.href} className="tool-card flex flex-col h-full">
+                <Link href={tool.href} className="tool-card group flex flex-col h-full">
                   {/* Gradient top strip */}
                   <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${tool.color} opacity-0 group-hover:opacity-100 transition-opacity`} />
 
@@ -145,7 +145,7 @@ export default function HomePage() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="rounded-2xl border border-border bg-card p-6 text-center"
+                className="rounded-2xl border border bg-card p-6 text-center"
               >
                 <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500/10">
                   <f.icon className="h-6 w-6 text-brand-400" />

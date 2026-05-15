@@ -61,7 +61,7 @@ export default function ReorderPdfPage() {
         <p className="mt-2 text-muted-foreground">Drag pages to rearrange, then download</p>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-6 space-y-6">
+      <div className="rounded-2xl border border bg-card p-6 space-y-6">
         <FileUploader accept={{ 'application/pdf': ['.pdf'] }} onFilesChange={handleFilesChange} />
 
         {isLoading && <div className="flex justify-center py-4"><Spinner /></div>}
@@ -71,7 +71,7 @@ export default function ReorderPdfPage() {
             <p className="text-sm font-medium text-foreground">Drag to reorder ({pages.length} pages)</p>
             <Reorder.Group axis="y" values={pages} onReorder={setPages} className="space-y-2">
               {pages.map(page => (
-                <Reorder.Item key={page.index} value={page} className="flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 cursor-grab active:cursor-grabbing">
+                <Reorder.Item key={page.index} value={page} className="flex items-center gap-3 rounded-xl border border bg-background px-4 py-3 cursor-grab active:cursor-grabbing">
                   <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
                   <span className="text-sm font-medium text-foreground">{page.label}</span>
                   <span className="ml-auto text-xs text-muted-foreground">#{page.index + 1}</span>

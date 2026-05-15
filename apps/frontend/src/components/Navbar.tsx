@@ -27,7 +27,7 @@ export function Navbar() {
     <header
       className={`sticky top-0 z-50 w-full transition-all duration-300 ${
         scrolled
-          ? 'border-b border-border/60 bg-background/80 backdrop-blur-xl shadow-lg shadow-black/5'
+          ? 'border-b border/60 bg-background/80 backdrop-blur-xl shadow-lg shadow-black/5'
           : 'bg-transparent'
       }`}
     >
@@ -55,7 +55,7 @@ export function Navbar() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 8 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute left-0 top-full mt-1 w-64 rounded-2xl border border-border bg-card/95 backdrop-blur-xl p-2 shadow-2xl"
+                    className="absolute left-0 top-full mt-1 w-64 rounded-2xl border border bg-card/95 backdrop-blur-xl p-2 shadow-2xl"
                   >
                     <div className="grid grid-cols-1 gap-0.5">
                       {PDF_MENU.map((item) => (
@@ -89,7 +89,7 @@ export function Navbar() {
             {mounted && (
               <button
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border bg-card text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                 aria-label="Toggle theme"
               >
                 {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -99,7 +99,7 @@ export function Navbar() {
               Get Started
             </Link>
             <button
-              className="flex md:hidden h-9 w-9 items-center justify-center rounded-xl border border-border bg-card"
+              className="flex md:hidden h-9 w-9 items-center justify-center rounded-xl border border bg-card"
               onClick={() => setMobileOpen(!mobileOpen)}
             >
               {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -115,7 +115,7 @@ export function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-border bg-background/95 backdrop-blur-xl"
+            className="md:hidden border-t border bg-background/95 backdrop-blur-xl"
           >
             <div className="px-4 py-4 space-y-1">
               {PDF_MENU.slice(0, 6).map((item) => (

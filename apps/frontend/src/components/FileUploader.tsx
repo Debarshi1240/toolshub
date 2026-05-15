@@ -69,7 +69,7 @@ export function FileUploader({ accept, multiple = false, maxFiles = 1, onFilesCh
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 10 }}
-                className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3"
+                className="flex items-center gap-3 rounded-xl border border bg-card px-4 py-3"
               >
                 {getFileIcon(file)}
                 <div className="flex-1 min-w-0">

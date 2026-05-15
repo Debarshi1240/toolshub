@@ -3,7 +3,7 @@ import { Zap, Github, Twitter, Mail } from 'lucide-react';
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-card/40 backdrop-blur-sm">
+    <footer className="border-t border bg-card/40 backdrop-blur-sm">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           {/* Brand */}
@@ -18,13 +18,13 @@ export function Footer() {
               Free, fast, and secure online tools for PDF processing, media downloading, and AI-powered plagiarism detection. No signup required.
             </p>
             <div className="mt-4 flex gap-3">
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-lg border border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
                 <Github className="h-4 w-4" />
               </a>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-lg border border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
                 <Twitter className="h-4 w-4" />
               </a>
-              <a href="mailto:hello@toolshub.dev" className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+              <a href="mailto:hello@toolshub.dev" className="flex h-9 w-9 items-center justify-center rounded-lg border border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
                 <Mail className="h-4 w-4" />
               </a>
             </div>
@@ -55,7 +55,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 border-t border-border pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-8 border-t border pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} ToolsHub. All rights reserved.</p>
           <p className="text-xs text-muted-foreground">Files are automatically deleted after 1 hour. Your privacy is our priority.</p>
         </div>

@@ -51,7 +51,7 @@ export default function ToolsIndexPage() {
                   key={tool.id}
                   variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
                 >
-                  <Link href={tool.href} className="tool-card flex flex-col h-full">
+                  <Link href={tool.href} className="tool-card group flex flex-col h-full">
                     <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${tool.color} opacity-0 group-hover:opacity-100 transition-opacity`} />
                     <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${tool.color} text-2xl shadow-lg`}>
                       {tool.icon}

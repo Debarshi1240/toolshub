@@ -21,7 +21,7 @@ export default function AboutPage() {
       </div>
 
       <div className="space-y-6">
-        <div className="rounded-2xl border border-border bg-card p-6">
+        <div className="rounded-2xl border border bg-card p-6">
           <h2 className="font-display text-xl font-semibold mb-3">What is ToolsHub?</h2>
           <p className="text-muted-foreground">
             ToolsHub is a comprehensive web platform offering 14+ tools for everyday productivity —
@@ -36,7 +36,7 @@ export default function AboutPage() {
             { icon: Clock, title: 'Always Fast', desc: 'Optimized pipeline processes most files in under 10 seconds.' },
             { icon: Github, title: 'Open Source', desc: 'Full source code available on GitHub. Audit it yourself.' },
           ].map((f) => (
-            <div key={f.title} className="rounded-2xl border border-border bg-card p-5 text-center">
+            <div key={f.title} className="rounded-2xl border border bg-card p-5 text-center">
               <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/10">
                 <f.icon className="h-5 w-5 text-brand-400" />
               </div>
@@ -46,11 +46,11 @@ export default function AboutPage() {
           ))}
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-6">
+        <div className="rounded-2xl border border bg-card p-6">
           <h2 className="font-display text-xl font-semibold mb-3">Tech Stack</h2>
           <div className="flex flex-wrap gap-2">
             {['Next.js 14', 'TypeScript', 'Tailwind CSS', 'Express.js', 'Python Flask', 'yt-dlp', 'pdf-lib', 'Claude AI', 'Cloudflare R2', 'Supabase'].map((t) => (
-              <span key={t} className="rounded-lg border border-border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">{t}</span>
+              <span key={t} className="rounded-lg border border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">{t}</span>
             ))}
           </div>
         </div>

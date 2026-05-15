@@ -29,7 +29,16 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    // In development, allow any localhost port
+    if (/^http:\/\/localhost(:\d+)?$/.test(origin)) return callback(null, true);
+    // In production, check env var
+    const allowed = (process.env.FRONTEND_URL || '').split(',').map(s => s.trim());
+    if (allowed.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS not allowed for origin: ${origin}`));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
