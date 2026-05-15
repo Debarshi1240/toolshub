@@ -158,6 +158,37 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── FAQ ────────────────────────────────────────────────────────────── */}
+      <section className="px-4 py-16 sm:py-20 bg-card/10">
+        <div className="mx-auto max-w-3xl">
+          <div className="text-center mb-12">
+            <h2 className="font-display text-3xl font-bold sm:text-4xl">Frequently Asked Questions</h2>
+            <p className="mt-3 text-muted-foreground">Clear answers to common questions.</p>
+          </div>
+          <div className="space-y-4">
+            {[
+              { q: 'Is ToolsHub really free?', a: 'Yes! All tools on ToolsHub are 100% free to use. We built this platform for the betterment of the public, and there are no hidden fees or subscriptions.' },
+              { q: 'Are my files secure?', a: 'Absolutely. All file processing happens in secure, temporary environments. We use an automated cleanup script that permanently deletes all files exactly 1 hour after processing.' },
+              { q: 'Do I need to create an account?', a: 'No signup is required. You can use all PDF tools, the media downloader, and the AI checker without providing any personal information.' },
+              { q: 'What video platforms are supported?', a: 'Our downloader currently supports YouTube, Instagram, Twitter (X), and TikTok. We are constantly adding support for more platforms.' },
+              { q: 'How does the AI Plagiarism Checker work?', a: 'It uses advanced LLMs (Claude AI) to analyze your text, identify common patterns, and generate a detailed originality report with flagged sentences.' },
+            ].map((faq, i) => (
+              <details key={i} className="group rounded-2xl border border bg-card p-6 [&_summary::-webkit-details-marker]:hidden cursor-pointer hover:border-brand-500/30 transition-colors">
+                <summary className="flex items-center justify-between gap-4">
+                  <h3 className="font-semibold text-foreground">{faq.q}</h3>
+                  <span className="shrink-0 transition duration-300 group-open:-rotate-180">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </span>
+                </summary>
+                <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{faq.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── CTA ───────────────────────────────────────────────────────────── */}
       <section className="px-4 py-20">
         <div className="mx-auto max-w-3xl text-center">
