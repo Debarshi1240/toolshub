@@ -15,6 +15,16 @@ function readPdf(filePath: string): Buffer {
   return fs.readFileSync(filePath);
 }
 
+function checkBinary(binary: string): boolean {
+  try {
+    const cmd = process.platform === 'win32' ? `where.exe ${binary}` : `which ${binary}`;
+    execSync(cmd, { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // ─── Merge PDFs ────────────────────────────────────────────────────────────────
 async function mergePdfs(filePaths: string[]): Promise<string> {
   const merged = await PDFDocument.create();
@@ -48,28 +58,36 @@ async function splitPdf(filePath: string, ranges?: number[][]): Promise<string[]
   return outputPaths;
 }
 
-// ─── Compress PDF (basic — re-save with pdf-lib; real compression via gs if available) ──
+// ─── Compress PDF ─────────────────────────────────────────────────────────────
 async function compressPdf(filePath: string): Promise<string> {
-  try {
-    const outPath = tempPath('pdf');
-    execSync(
-      `gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dQUIET -dBATCH -sOutputFile=${outPath} ${filePath}`,
-      { timeout: 60000 }
-    );
-    return outPath;
-  } catch {
-    // Fallback: just re-save with pdf-lib
-    const doc = await PDFDocument.load(readPdf(filePath));
-    const outPath = tempPath('pdf');
-    fs.writeFileSync(outPath, await doc.save({ useObjectStreams: true }));
-    return outPath;
+  if (checkBinary('gs')) {
+    try {
+      const outPath = tempPath('pdf');
+      execSync(
+        `gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dQUIET -dBATCH -sOutputFile="${outPath}" "${filePath}"`,
+        { timeout: 60000 }
+      );
+      return outPath;
+    } catch (e) {
+      console.warn('[PDF] Ghostscript compression failed, falling back to pdf-lib');
+    }
   }
+  
+  // Fallback: just re-save with pdf-lib
+  const doc = await PDFDocument.load(readPdf(filePath));
+  const outPath = tempPath('pdf');
+  fs.writeFileSync(outPath, await doc.save({ useObjectStreams: true }));
+  return outPath;
 }
 
 // ─── PDF to Word (LibreOffice) ────────────────────────────────────────────────
 async function pdfToWord(filePath: string): Promise<string> {
+  if (!checkBinary('libreoffice') && !checkBinary('soffice')) {
+    throw new Error('PDF to Word conversion requires LibreOffice to be installed on the server.');
+  }
+  const binary = checkBinary('libreoffice') ? 'libreoffice' : 'soffice';
   const outDir = TEMP_DIR;
-  execSync(`libreoffice --headless --convert-to docx "${filePath}" --outdir "${outDir}"`, {
+  execSync(`"${binary}" --headless --convert-to docx "${filePath}" --outdir "${outDir}"`, {
     timeout: 120000,
   });
   const baseName = path.basename(filePath, '.pdf');
@@ -78,8 +96,12 @@ async function pdfToWord(filePath: string): Promise<string> {
 
 // ─── Word to PDF (LibreOffice) ────────────────────────────────────────────────
 async function wordToPdf(filePath: string): Promise<string> {
+  if (!checkBinary('libreoffice') && !checkBinary('soffice')) {
+    throw new Error('Word to PDF conversion requires LibreOffice to be installed on the server.');
+  }
+  const binary = checkBinary('libreoffice') ? 'libreoffice' : 'soffice';
   const outDir = TEMP_DIR;
-  execSync(`libreoffice --headless --convert-to pdf "${filePath}" --outdir "${outDir}"`, {
+  execSync(`"${binary}" --headless --convert-to pdf "${filePath}" --outdir "${outDir}"`, {
     timeout: 120000,
   });
   const baseName = path.basename(filePath, path.extname(filePath));
@@ -88,6 +110,9 @@ async function wordToPdf(filePath: string): Promise<string> {
 
 // ─── PDF to JPG (pdftoppm via poppler) ───────────────────────────────────────
 async function pdfToJpg(filePath: string): Promise<string[]> {
+  if (!checkBinary('pdftoppm')) {
+    throw new Error('PDF to Image conversion requires Poppler (pdftoppm) to be installed on the server.');
+  }
   const outPrefix = path.join(TEMP_DIR, uuidv4());
   execSync(`pdftoppm -jpeg -r 150 "${filePath}" "${outPrefix}"`, { timeout: 60000 });
   const files = fs.readdirSync(TEMP_DIR).filter((f) => f.startsWith(path.basename(outPrefix)));
@@ -155,30 +180,33 @@ async function addWatermark(
 
 // ─── Protect PDF ──────────────────────────────────────────────────────────────
 async function protectPdf(filePath: string, password: string): Promise<string> {
-  // pdf-lib doesn't support encryption; use qpdf if available
-  const outPath = tempPath('pdf');
-  try {
-    execSync(
-      `qpdf --encrypt "${password}" "${password}" 128 -- "${filePath}" "${outPath}"`,
-      { timeout: 30000 }
-    );
-  } catch {
-    throw new Error('PDF encryption requires qpdf. Please install qpdf on the server.');
+  if (!checkBinary('qpdf')) {
+    throw new Error('PDF protection requires qpdf to be installed on the server.');
   }
+  const outPath = tempPath('pdf');
+  execSync(
+    `qpdf --encrypt "${password}" "${password}" 256 -- "${filePath}" "${outPath}"`,
+    { timeout: 30000 }
+  );
   return outPath;
 }
 
 // ─── Unlock PDF ───────────────────────────────────────────────────────────────
 async function unlockPdf(filePath: string, password?: string): Promise<string> {
   const outPath = tempPath('pdf');
-  try {
-    const passFlag = password ? `--password="${password}"` : '';
-    execSync(`qpdf --decrypt ${passFlag} "${filePath}" "${outPath}"`, { timeout: 30000 });
-  } catch {
-    // Try pdf-lib without password
-    const doc = await PDFDocument.load(readPdf(filePath));
-    fs.writeFileSync(outPath, await doc.save());
+  if (checkBinary('qpdf')) {
+    try {
+      const passFlag = password ? `--password="${password}"` : '';
+      execSync(`qpdf --decrypt ${passFlag} "${filePath}" "${outPath}"`, { timeout: 30000 });
+      return outPath;
+    } catch (e) {
+      console.warn('[PDF] qpdf decryption failed');
+    }
   }
+  
+  // Try pdf-lib as fallback
+  const doc = await PDFDocument.load(readPdf(filePath));
+  fs.writeFileSync(outPath, await doc.save());
   return outPath;
 }
 

@@ -1,22 +1,25 @@
 import os
 import uuid
-import tempfile
 import json
-from flask import Flask, request, jsonify
+import shutil
+import tempfile
+import re
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
 import yt_dlp
-import boto3
-from botocore.config import Config
 
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000", os.getenv("FRONTEND_URL", "*")])
 
-# ── Rate Limiting ─────────────────────────────────────────────────────────────
+# CORS: Allow any localhost port in dev
+CORS(app, origins=re.compile(r"http://localhost(:\d+)?$") if os.getenv("FLASK_ENV") != "production"
+     else [os.getenv("FRONTEND_URL", "")], supports_credentials=True)
+
+# Rate Limiting
 limiter = Limiter(
     key_func=get_remote_address,
     app=app,
@@ -24,14 +27,18 @@ limiter = Limiter(
     storage_uri="memory://"
 )
 
-DOWNLOADS_DIR = os.path.join(os.path.dirname(__file__), "downloads")
+# Directories
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DOWNLOADS_DIR = os.path.join(BASE_DIR, "downloads")
 os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 
-# ── Cloudflare R2 Client ──────────────────────────────────────────────────────
+# Optional Cloudflare R2
 r2 = None
-endpoint_url = os.getenv("CLOUDFLARE_R2_ENDPOINT")
+endpoint_url = os.getenv("CLOUDFLARE_R2_ENDPOINT", "")
 if endpoint_url and not endpoint_url.startswith("https://YOUR_ACCOUNT_ID"):
     try:
+        import boto3
+        from botocore.config import Config
         r2 = boto3.client(
             "s3",
             endpoint_url=endpoint_url,
@@ -40,6 +47,7 @@ if endpoint_url and not endpoint_url.startswith("https://YOUR_ACCOUNT_ID"):
             config=Config(signature_version="s3v4"),
             region_name="auto",
         )
+        print("[INFO] Cloudflare R2 client initialized.")
     except Exception as e:
         print(f"[WARNING] Could not initialize R2 client: {e}")
 
@@ -51,171 +59,191 @@ SUPPORTED_HOSTS = [
     "instagram.com",
     "twitter.com", "x.com",
     "tiktok.com",
+    "facebook.com",
+    "vimeo.com"
 ]
 
+# Improved format selectors for better compatibility without FFmpeg
 QUALITY_FORMAT_MAP = {
-    "360p":  "bestvideo[height<=360]+bestaudio/best[height<=360]",
-    "720p":  "bestvideo[height<=720]+bestaudio/best[height<=720]",
-    "1080p": "bestvideo[height<=1080]+bestaudio/best[height<=1080]",
-    "audio": "bestaudio/best",
+    "360p":  "best[height<=360][ext=mp4]/best[height<=360]/best",
+    "720p":  "best[height<=720][ext=mp4]/best[height<=720]/best",
+    "1080p": "best[height<=1080][ext=mp4]/best[height<=1080]/best",
+    "audio": "bestaudio[ext=m4a]/bestaudio/best",
 }
 
+def _get_ffmpeg_path() -> str | None:
+    """Return path to FFmpeg binary (from imageio-ffmpeg if available)."""
+    try:
+        import imageio_ffmpeg
+        path = imageio_ffmpeg.get_ffmpeg_exe()
+        print(f"[INFO] Found FFmpeg via imageio-ffmpeg: {path}")
+        return path
+    except Exception:
+        pass
+    return None
 
 def is_supported_url(url: str) -> bool:
-    return any(host in url for host in SUPPORTED_HOSTS)
+    return any(host in url.lower() for host in SUPPORTED_HOSTS)
 
-
-def upload_to_r2(file_path: str, content_type: str) -> str:
-    """Upload file to Cloudflare R2 and return public URL."""
-    if not r2:
-        print(f"[WARNING] R2 not configured. File {file_path} NOT uploaded.")
-        return f"file://{file_path}"
-    
+def upload_to_r2(file_path: str, content_type: str) -> str | None:
+    if not r2: return None
     key = f"downloads/{uuid.uuid4()}{os.path.splitext(file_path)[1]}"
-    with open(file_path, "rb") as f:
-        r2.put_object(
-            Bucket=BUCKET,
-            Key=key,
-            Body=f,
-            ContentType=content_type,
-        )
-    if PUBLIC_URL:
-        return f"{PUBLIC_URL}/{key}"
-    return f"{os.getenv('CLOUDFLARE_R2_ENDPOINT')}/{BUCKET}/{key}"
+    try:
+        with open(file_path, "rb") as f:
+            r2.put_object(Bucket=BUCKET, Key=key, Body=f, ContentType=content_type)
+        if PUBLIC_URL: return f"{PUBLIC_URL.rstrip('/')}/{key}"
+        return f"{endpoint_url.rstrip('/')}/{BUCKET}/{key}"
+    except Exception as e:
+        print(f"[ERROR] R2 upload failed: {e}")
+        return None
 
+def serve_locally(file_path: str) -> str:
+    port = int(os.getenv("PORT", 5000))
+    dest_name = uuid.uuid4().hex + os.path.splitext(file_path)[1]
+    dest = os.path.join(DOWNLOADS_DIR, dest_name)
+    shutil.move(file_path, dest)
+    # Note: This assumes the frontend can reach the downloader directly or via proxy
+    # If proxying via Express, this URL might need to be adjusted
+    return f"http://localhost:{port}/files/{dest_name}"
 
-# ── GET /health ───────────────────────────────────────────────────────────────
+@app.route("/files/<path:filename>")
+def serve_file(filename):
+    return send_from_directory(DOWNLOADS_DIR, filename, as_attachment=True)
+
 @app.route("/health")
 def health():
-    return jsonify({"status": "healthy", "service": "ToolsHub Downloader", "r2_configured": r2 is not None})
+    return jsonify({
+        "status": "healthy",
+        "service": "ToolsHub Downloader",
+        "r2_configured": r2 is not None,
+        "ffmpeg_detected": _get_ffmpeg_path() is not None
+    })
 
-
-# ── POST /info ────────────────────────────────────────────────────────────────
 @app.route("/info", methods=["POST"])
-@limiter.limit("20 per hour")
+@limiter.limit("30 per hour")
 def get_info():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     url = data.get("url", "").strip()
 
     if not url:
         return jsonify({"error": "URL is required"}), 400
     if not is_supported_url(url):
-        return jsonify({"error": "Unsupported platform. Supported: YouTube, Instagram, Twitter/X"}), 400
+        return jsonify({"error": "Unsupported platform"}), 400
 
     ydl_opts = {
+        "format": "best",
+        "noplaylist": True,
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     }
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
 
-        available_formats = []
         formats = info.get("formats", [])
-        heights = {f.get("height") for f in formats if f.get("height")}
-        if 360 in heights or any(h and h <= 360 for h in heights):
-            available_formats.append("360p")
-        if 720 in heights or any(h and h <= 720 for h in heights):
-            available_formats.append("720p")
-        if 1080 in heights or any(h and h <= 1080 for h in heights):
-            available_formats.append("1080p")
+        heights = sorted(list({f.get("height") for f in formats if f.get("height")}))
+
+        available_formats = []
+        if heights:
+            if any(h <= 360 for h in heights): available_formats.append("360p")
+            if any(h <= 720 for h in heights): available_formats.append("720p")
+            if any(h <= 1080 for h in heights): available_formats.append("1080p")
+        else:
+            available_formats = ["360p", "720p", "1080p"]
         available_formats.append("audio")
 
         return jsonify({
             "title": info.get("title", "Unknown"),
             "thumbnail": info.get("thumbnail", ""),
             "duration": info.get("duration", 0),
-            "uploader": info.get("uploader", "Unknown"),
+            "uploader": info.get("uploader") or info.get("channel", "Unknown"),
             "availableFormats": available_formats,
             "viewCount": info.get("view_count"),
+            "platform": info.get("extractor_key", "Unknown"),
         })
-    except yt_dlp.utils.DownloadError as e:
-        return jsonify({"error": f"Could not fetch video info: {str(e)}"}), 400
+
     except Exception as e:
-        return jsonify({"error": "Failed to fetch video info"}), 500
+        print(f"[ERROR] /info: {e}")
+        return jsonify({"error": str(e)}), 400
 
-
-# ── POST /download ─────────────────────────────────────────────────────────────
 @app.route("/download", methods=["POST"])
-@limiter.limit("5 per hour")
+@limiter.limit("10 per hour")
 def download():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     url = data.get("url", "").strip()
     quality = data.get("quality", "720p")
     fmt = data.get("format", "mp4")
 
-    if not url:
-        return jsonify({"error": "URL is required"}), 400
-    if not is_supported_url(url):
-        return jsonify({"error": "Unsupported platform"}), 400
-    if quality not in QUALITY_FORMAT_MAP:
-        return jsonify({"error": f"Invalid quality. Choose from: {list(QUALITY_FORMAT_MAP.keys())}"}), 400
-
+    if not url: return jsonify({"error": "URL is required"}), 400
+    
+    is_audio = (fmt == "mp3" or quality == "audio")
     tmp_dir = tempfile.mkdtemp(dir=DOWNLOADS_DIR)
-    output_template = os.path.join(tmp_dir, "%(title)s.%(ext)s")
-
+    
+    ffmpeg_path = _get_ffmpeg_path()
+    
     ydl_opts = {
-        "format": QUALITY_FORMAT_MAP[quality],
-        "outtmpl": output_template,
+        "format": QUALITY_FORMAT_MAP.get(quality, "best"),
+        "outtmpl": os.path.join(tmp_dir, "%(title)s.%(ext)s"),
         "quiet": True,
         "no_warnings": True,
-        "merge_output_format": "mp4" if fmt == "mp4" else None,
-        "postprocessors": [],
     }
-
-    if fmt == "mp3" or quality == "audio":
-        ydl_opts["postprocessors"] = [{
-            "key": "FFmpegExtractAudio",
-            "preferredcodec": "mp3",
-            "preferredquality": "192",
-        }]
+    
+    if ffmpeg_path:
+        ydl_opts["ffmpeg_location"] = ffmpeg_path
+        if is_audio:
+            ydl_opts["postprocessors"] = [{
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "mp3",
+                "preferredquality": "192",
+            }]
+    elif is_audio:
+        # Fallback for no ffmpeg: just get best audio and keep original ext (m4a usually)
+        ydl_opts["format"] = "bestaudio/best"
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            file_name = ydl.prepare_filename(info)
-            if fmt == "mp3" or quality == "audio":
-                file_name = os.path.splitext(file_name)[0] + ".mp3"
-
-        # Find the actual downloaded file
-        files = os.listdir(tmp_dir)
+            
+        files = [f for f in os.listdir(tmp_dir) if os.path.isfile(os.path.join(tmp_dir, f))]
         if not files:
-            return jsonify({"error": "Download failed — no file produced"}), 500
+            return jsonify({"error": "Download produced no file"}), 500
 
         actual_file = os.path.join(tmp_dir, files[0])
-        file_size = os.path.getsize(actual_file)
-        ext = os.path.splitext(actual_file)[1]
+        ext = os.path.splitext(actual_file)[1].lower()
         content_type = "audio/mpeg" if ext == ".mp3" else "video/mp4"
+        file_size = os.path.getsize(actual_file)
 
-        # Upload to R2
         public_url = upload_to_r2(actual_file, content_type)
-
-        # Cleanup if uploaded
-        if r2:
-            import shutil
-            shutil.rmtree(tmp_dir, ignore_errors=True)
-
-        from datetime import datetime, timedelta
-        expires_at = (datetime.utcnow() + timedelta(hours=1)).isoformat() + "Z"
+        if not public_url:
+            public_url = serve_locally(actual_file)
+        
+        shutil.rmtree(tmp_dir, ignore_errors=True)
 
         return jsonify({
             "downloadUrl": public_url,
             "fileName": os.path.basename(actual_file),
             "fileSize": file_size,
-            "format": fmt,
+            "format": ext.lstrip("."),
             "quality": quality,
-            "expiresAt": expires_at,
+            "expiresAt": (import_datetime().utcnow() + import_timedelta()(hours=1)).isoformat() + "Z"
         })
 
-    except yt_dlp.utils.DownloadError as e:
-        return jsonify({"error": f"Download failed: {str(e)}"}), 400
     except Exception as e:
-        return jsonify({"error": "An unexpected error occurred"}), 500
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        print(f"[ERROR] /download: {e}")
+        return jsonify({"error": str(e)}), 500
 
+def import_datetime():
+    from datetime import datetime
+    return datetime
+
+def import_timedelta():
+    from datetime import timedelta
+    return timedelta
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
-    debug = os.getenv("FLASK_ENV") == "development"
-    app.run(host="0.0.0.0", port=port, debug=debug)
+    app.run(host="0.0.0.0", port=port, debug=True)

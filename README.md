@@ -22,44 +22,30 @@ toolshub/
 
 ---
 
-## 🚀 Prerequisites
-
-- Node.js >= 18
-- Python >= 3.10
-- npm >= 9
-- pip >= 23
-- LibreOffice (for PDF↔Word conversion)
-- ffmpeg (for media processing)
+## 🚀 "Zero Config" Local Mode
+ToolsHub is designed to work **immediately** without any external API keys or cloud storage.
+- **Storage:** Falls back to local disk if Cloudflare R2 keys are missing.
+- **AI:** Plagiarism checker requires an Anthropic key, but the UI gracefully handles its absence.
+- **Downloader:** Uses a bundled FFmpeg binary for most operations.
 
 ---
 
-## ⚡ Quick Start
-
-### 1. Clone & Install
+## 📦 Installation
 
 ```bash
-git clone https://github.com/yourusername/toolshub.git
-cd toolshub
-
-# Install Node dependencies (all workspaces)
+# Install all Node dependencies
 npm install
 
-# Install Python dependencies
+# Setup Downloader
 cd apps/downloader
 pip install -r requirements.txt
-cd ../..
 ```
 
-### 2. Configure Environment Variables
-
-```bash
-# Copy example env files
-cp apps/frontend/.env.example apps/frontend/.env.local
-cp apps/backend/.env.example apps/backend/.env
-cp apps/downloader/.env.example apps/downloader/.env
-```
-
-Fill in all values in each `.env` file. See `.env.example` files for required keys.
+### Optional: Helper Binaries
+For full PDF conversion support (Word↔PDF), install:
+- **LibreOffice** (PDF↔Word)
+- **Ghostscript** (Advanced compression)
+- **qpdf** (PDF protection/encryption)
 
 ### 3. Run in Development
 

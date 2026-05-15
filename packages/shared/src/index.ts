@@ -44,7 +44,7 @@ export function countWords(text: string): number {
 }
 
 /** Supported video platforms */
-export const SUPPORTED_PLATFORMS = ['youtube.com', 'youtu.be', 'instagram.com', 'twitter.com', 'x.com'];
+export const SUPPORTED_PLATFORMS = ['youtube.com', 'youtu.be', 'instagram.com', 'twitter.com', 'x.com', 'tiktok.com'];
 
 export function isSupportedUrl(url: string): boolean {
   try {
