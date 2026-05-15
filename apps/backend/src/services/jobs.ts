@@ -2,10 +2,12 @@ import { createClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
 import { Job, JobType, JobStatus } from '../../../packages/shared/src/types';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_ANON_KEY || ''
-);
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+
+const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY)
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
 
 export async function saveJob(params: {
   type: JobType;
@@ -24,6 +26,11 @@ export async function saveJob(params: {
     file_url: params.file_url,
   };
 
+  if (!supabase) {
+    console.warn(`[Jobs] Missing Supabase keys. Job ${job.id} not saved to DB.`);
+    return job;
+  }
+
   try {
     const { error } = await supabase.from('jobs').insert([job]);
     if (error) console.error('[Supabase] Failed to save job:', error.message);
@@ -35,6 +42,7 @@ export async function saveJob(params: {
 }
 
 export async function getExpiredJobs(): Promise<Job[]> {
+  if (!supabase) return [];
   try {
     const { data, error } = await supabase
       .from('jobs')
@@ -50,6 +58,7 @@ export async function getExpiredJobs(): Promise<Job[]> {
 }
 
 export async function deleteJob(id: string): Promise<void> {
+  if (!supabase) return;
   try {
     await supabase.from('jobs').delete().eq('id', id);
   } catch {}

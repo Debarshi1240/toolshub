@@ -28,14 +28,21 @@ DOWNLOADS_DIR = os.path.join(os.path.dirname(__file__), "downloads")
 os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 
 # ── Cloudflare R2 Client ──────────────────────────────────────────────────────
-r2 = boto3.client(
-    "s3",
-    endpoint_url=os.getenv("CLOUDFLARE_R2_ENDPOINT"),
-    aws_access_key_id=os.getenv("CLOUDFLARE_R2_ACCESS_KEY"),
-    aws_secret_access_key=os.getenv("CLOUDFLARE_R2_SECRET_KEY"),
-    config=Config(signature_version="s3v4"),
-    region_name="auto",
-)
+r2 = None
+endpoint_url = os.getenv("CLOUDFLARE_R2_ENDPOINT")
+if endpoint_url and not endpoint_url.startswith("https://YOUR_ACCOUNT_ID"):
+    try:
+        r2 = boto3.client(
+            "s3",
+            endpoint_url=endpoint_url,
+            aws_access_key_id=os.getenv("CLOUDFLARE_R2_ACCESS_KEY"),
+            aws_secret_access_key=os.getenv("CLOUDFLARE_R2_SECRET_KEY"),
+            config=Config(signature_version="s3v4"),
+            region_name="auto",
+        )
+    except Exception as e:
+        print(f"[WARNING] Could not initialize R2 client: {e}")
+
 BUCKET = os.getenv("CLOUDFLARE_R2_BUCKET", "toolshub-files")
 PUBLIC_URL = os.getenv("CLOUDFLARE_R2_PUBLIC_URL", "")
 
@@ -60,6 +67,10 @@ def is_supported_url(url: str) -> bool:
 
 def upload_to_r2(file_path: str, content_type: str) -> str:
     """Upload file to Cloudflare R2 and return public URL."""
+    if not r2:
+        print(f"[WARNING] R2 not configured. File {file_path} NOT uploaded.")
+        return f"file://{file_path}"
+    
     key = f"downloads/{uuid.uuid4()}{os.path.splitext(file_path)[1]}"
     with open(file_path, "rb") as f:
         r2.put_object(
@@ -76,7 +87,7 @@ def upload_to_r2(file_path: str, content_type: str) -> str:
 # ── GET /health ───────────────────────────────────────────────────────────────
 @app.route("/health")
 def health():
-    return jsonify({"status": "healthy", "service": "ToolsHub Downloader"})
+    return jsonify({"status": "healthy", "service": "ToolsHub Downloader", "r2_configured": r2 is not None})
 
 
 # ── POST /info ────────────────────────────────────────────────────────────────
@@ -181,9 +192,10 @@ def download():
         # Upload to R2
         public_url = upload_to_r2(actual_file, content_type)
 
-        # Cleanup
-        import shutil
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+        # Cleanup if uploaded
+        if r2:
+            import shutil
+            shutil.rmtree(tmp_dir, ignore_errors=True)
 
         from datetime import datetime, timedelta
         expires_at = (datetime.utcnow() + timedelta(hours=1)).isoformat() + "Z"
