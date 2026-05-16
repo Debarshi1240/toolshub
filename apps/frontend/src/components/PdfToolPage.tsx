@@ -92,23 +92,7 @@ export function PdfToolPage({
 
     try {
       const formData = buildFormData();
-      const endpoint = toolId.includes('pdf-to-word') ? 'pdf-to-word'
-        : toolId.includes('word-to-pdf') ? 'word-to-pdf'
-        : toolId.includes('jpg-to-pdf') ? 'jpg-to-pdf'
-        : toolId.includes('pdf-to-jpg') ? 'pdf-to-jpg'
-        : toolId.replace('toolshub/', '').replace('-pdf', '');
-
-      const routeMap: Record<string, string> = {
-        'merge': 'merge', 'split': 'split', 'compress': 'compress',
-        'pdf-to-word': 'pdf-to-word', 'word-to-pdf': 'word-to-pdf',
-        'pdf-to-jpg': 'pdf-to-jpg', 'jpg-to-pdf': 'jpg-to-pdf',
-        'rotate': 'rotate', 'watermark': 'watermark', 'protect': 'protect',
-        'unlock': 'unlock', 'reorder': 'reorder',
-      };
-      const route = toolId.replace('-pdf', '').replace('jpg-to-', 'jpg-to-').replace('pdf-to-', 'pdf-to-');
-      const finalRoute = routeMap[route] || route;
-
-      const { data } = await axios.post(`${apiUrl}/api/pdf/${finalRoute}`, formData, {
+      const { data } = await axios.post(`${apiUrl}/api/pdf/${toolId}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 120000,
       });
