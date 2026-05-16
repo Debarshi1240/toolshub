@@ -84,7 +84,7 @@ async function compressPdf(filePath: string): Promise<string> {
 // ─── PDF to Word (LibreOffice) ────────────────────────────────────────────────
 async function pdfToWord(filePath: string): Promise<string> {
   if (!checkBinary('libreoffice') && !checkBinary('soffice')) {
-    throw new Error('PDF to Word conversion requires LibreOffice to be installed on the server.');
+    throw new Error('LibreOffice is required. Please install it and add "C:\\Program Files\\LibreOffice\\program" to your system PATH.');
   }
   const binary = checkBinary('libreoffice') ? 'libreoffice' : 'soffice';
   const outDir = TEMP_DIR;
@@ -98,7 +98,7 @@ async function pdfToWord(filePath: string): Promise<string> {
 // ─── Word to PDF (LibreOffice) ────────────────────────────────────────────────
 async function wordToPdf(filePath: string): Promise<string> {
   if (!checkBinary('libreoffice') && !checkBinary('soffice')) {
-    throw new Error('Word to PDF conversion requires LibreOffice to be installed on the server.');
+    throw new Error('LibreOffice is required. Please install it and add "C:\\Program Files\\LibreOffice\\program" to your system PATH.');
   }
   const binary = checkBinary('libreoffice') ? 'libreoffice' : 'soffice';
   const outDir = TEMP_DIR;

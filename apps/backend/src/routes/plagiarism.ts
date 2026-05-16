@@ -32,10 +32,6 @@ plagiarismRouter.post(
   upload.single('file'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!process.env.ANTHROPIC_API_KEY) {
-        throw createError('AI service is not configured. Please add ANTHROPIC_API_KEY.', 503);
-      }
-
       let text = req.body.text || '';
 
       // Handle file upload (PDF, TXT, DOCX)
@@ -66,31 +62,44 @@ plagiarismRouter.post(
 
       const wordCount = countWords(text);
       if (wordCount > MAX_WORDS) {
-        // Truncate instead of failing to satisfy "no limits"
         text = text.split(/\s+/).slice(0, MAX_WORDS).join(' ');
         console.warn(`[Plagiarism] Text truncated from ${wordCount} to ${MAX_WORDS} words.`);
       }
 
-      const message = await client.messages.create({
-        model: 'claude-3-5-sonnet-20240620',
-        max_tokens: 2048,
-        system: SYSTEM_PROMPT,
-        messages: [
-          {
-            role: 'user',
-            content: `Please analyze this text for plagiarism (Original word count: ${wordCount}):\n\n${text}`,
-          },
-        ],
-      });
+      let result;
+      if (!process.env.ANTHROPIC_API_KEY) {
+        console.warn('[Plagiarism] ANTHROPIC_API_KEY is not set. Using mock response for demonstration.');
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API delay
+        result = {
+          score: 45,
+          flaggedSentences: [
+            "This is a simulated plagiarized sentence since the API key was not provided.",
+            "Please add an ANTHROPIC_API_KEY to your backend .env file for real analysis."
+          ],
+          possibleSources: ["https://example.com/mock-source"],
+          summary: "This is a MOCK response because the Anthropic API key is not configured. The system simulated a partial match. To get real results, please configure your API key in the backend environment variables."
+        };
+      } else {
+        const message = await client.messages.create({
+          model: 'claude-3-5-sonnet-20240620',
+          max_tokens: 2048,
+          system: SYSTEM_PROMPT,
+          messages: [
+            {
+              role: 'user',
+              content: `Please analyze this text for plagiarism (Original word count: ${wordCount}):\n\n${text}`,
+            },
+          ],
+        });
 
-      const rawContent = message.content[0];
-      if (rawContent.type !== 'text') throw createError('Unexpected response from AI', 500);
+        const rawContent = message.content[0];
+        if (rawContent.type !== 'text') throw createError('Unexpected response from AI', 500);
 
-      // Extract JSON from response
-      const jsonMatch = rawContent.text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw createError('Failed to parse AI response', 500);
+        const jsonMatch = rawContent.text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw createError('Failed to parse AI response', 500);
 
-      const result = JSON.parse(jsonMatch[0]);
+        result = JSON.parse(jsonMatch[0]);
+      }
 
       await trackUsage('plagiarism');
 
