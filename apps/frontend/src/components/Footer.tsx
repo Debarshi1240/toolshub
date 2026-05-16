@@ -25,6 +25,8 @@ export function Footer() {
               <li><Link href="/tools/merge-pdf" className="text-sm text-muted-foreground hover:text-brand-400 transition-colors">Merge PDF</Link></li>
               <li><Link href="/tools/split-pdf" className="text-sm text-muted-foreground hover:text-brand-400 transition-colors">Split PDF</Link></li>
               <li><Link href="/tools/compress-pdf" className="text-sm text-muted-foreground hover:text-brand-400 transition-colors">Compress PDF</Link></li>
+              <li><Link href="/tools/compress-all" className="text-sm text-muted-foreground hover:text-brand-400 transition-colors">Compress All</Link></li>
+              <li><Link href="/tools/create-zip" className="text-sm text-muted-foreground hover:text-brand-400 transition-colors">Create ZIP</Link></li>
               <li><Link href="/tools/pdf-to-word" className="text-sm text-muted-foreground hover:text-brand-400 transition-colors">PDF to Word</Link></li>
             </ul>
           </div>

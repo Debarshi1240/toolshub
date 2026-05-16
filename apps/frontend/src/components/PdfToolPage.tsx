@@ -18,7 +18,7 @@ interface PdfToolPageProps {
   accept?: Record<string, string[]>;
   multiple?: boolean;
   maxFiles?: number;
-  extraFields?: React.ReactNode;
+  extraFields?: (state: Record<string, string>, update: (key: string, val: string) => void) => React.ReactNode;
   getFormData?: (files: File[], extraState: Record<string, string>) => FormData;
   hint?: string;
   gradient: string;
@@ -29,7 +29,7 @@ export function PdfToolPage({
   maxFiles = 1, extraFields, getFormData, hint, gradient,
 }: PdfToolPageProps) {
   const [files, setFiles] = useState<File[]>([]);
-  const [extraState] = useState<Record<string, string>>({});
+  const [extraState, setExtraState] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<{ downloadUrls: string[]; fileCount: number } | null>(null);
@@ -75,6 +75,9 @@ export function PdfToolPage({
     if (!getFormData) {
       if (multiple) files.forEach((f) => fd.append('files', f));
       else if (files[0]) fd.append('file', files[0]);
+
+      // Add extra state fields to FormData automatically
+      Object.entries(extraState).forEach(([k, v]) => fd.append(k, v));
     }
     return fd;
   };
@@ -130,7 +133,11 @@ export function PdfToolPage({
           hint={hint}
         />
 
-        {extraFields}
+        {extraFields && (
+          <div className="space-y-4 py-2">
+            {extraFields(extraState, (k, v) => setExtraState(prev => ({ ...prev, [k]: v })))}
+          </div>
+        )}
 
         <AnimatePresence>
           {isProcessing && (
@@ -169,17 +176,18 @@ export function PdfToolPage({
             </div>
             <div className="space-y-2">
               {result.downloadUrls.map((url, i) => (
-                <a
+                <button
                   key={i}
-                  href={url}
-                  download
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 w-full rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm font-medium text-green-400 hover:bg-green-500/20 transition-colors"
+                  onClick={() => {
+                    const urlObj = new URL(url);
+                    const name = urlObj.pathname.split('/').pop() || `result-${i + 1}`;
+                    const response = fetch(url).then(res => res.blob()).then(blob => saveAs(blob, name));
+                  }}
+                  className="flex items-center gap-2 w-full rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm font-medium text-green-400 hover:bg-green-500/20 transition-colors text-left"
                 >
                   <Download className="h-4 w-4" />
                   {result.fileCount > 1 ? `Download file ${i + 1}` : 'Download Result'}
-                </a>
+                </button>
               ))}
             </div>
             {result.fileCount > 1 && (
