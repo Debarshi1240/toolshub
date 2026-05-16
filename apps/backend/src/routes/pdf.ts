@@ -19,14 +19,14 @@ const pdfLimiter = rateLimit({
 pdfRouter.use(pdfLimiter);
 
 // ─── Merge PDF ────────────────────────────────────────────────────────────────
-pdfRouter.post('/merge', uploadMultiple.array('files', 20), async (req, res, next) => {
+pdfRouter.post('/merge-pdf', uploadMultiple.array('files', 20), async (req, res, next) => {
   await handlePdfTool('merge-pdf', req, res, next, async (files) => {
     return pdfService.mergePdfs(files.map((f) => f.path));
   });
 });
 
 // ─── Split PDF ────────────────────────────────────────────────────────────────
-pdfRouter.post('/split', upload.single('file'), async (req, res, next) => {
+pdfRouter.post('/split-pdf', upload.single('file'), async (req, res, next) => {
   await handlePdfTool('split-pdf', req, res, next, async (files) => {
     const { ranges } = req.body;
     return pdfService.splitPdf(files[0].path, ranges ? JSON.parse(ranges) : undefined);
@@ -34,7 +34,7 @@ pdfRouter.post('/split', upload.single('file'), async (req, res, next) => {
 });
 
 // ─── Compress PDF ─────────────────────────────────────────────────────────────
-pdfRouter.post('/compress', uploadMultiple.array('files', 20), async (req, res, next) => {
+pdfRouter.post('/compress-pdf', uploadMultiple.array('files', 20), async (req, res, next) => {
   await handlePdfTool('compress-pdf', req, res, next, async (files) => {
     const outputPaths = [];
     for (const file of files) {
@@ -73,7 +73,7 @@ pdfRouter.post('/jpg-to-pdf', uploadMultiple.array('files', 20), async (req, res
 });
 
 // ─── Rotate PDF ───────────────────────────────────────────────────────────────
-pdfRouter.post('/rotate', upload.single('file'), async (req, res, next) => {
+pdfRouter.post('/rotate-pdf', upload.single('file'), async (req, res, next) => {
   await handlePdfTool('rotate-pdf', req, res, next, async (files) => {
     const degrees = parseInt(req.body.degrees || '90');
     const pages = req.body.pages ? JSON.parse(req.body.pages) : undefined;
@@ -82,7 +82,7 @@ pdfRouter.post('/rotate', upload.single('file'), async (req, res, next) => {
 });
 
 // ─── Watermark PDF ────────────────────────────────────────────────────────────
-pdfRouter.post('/watermark', upload.single('file'), async (req, res, next) => {
+pdfRouter.post('/watermark-pdf', upload.single('file'), async (req, res, next) => {
   await handlePdfTool('watermark-pdf', req, res, next, async (files) => {
     const { text, opacity, color, fontSize } = req.body;
     return pdfService.addWatermark(files[0].path, {
@@ -95,7 +95,7 @@ pdfRouter.post('/watermark', upload.single('file'), async (req, res, next) => {
 });
 
 // ─── Protect PDF ──────────────────────────────────────────────────────────────
-pdfRouter.post('/protect', upload.single('file'), async (req, res, next) => {
+pdfRouter.post('/protect-pdf', upload.single('file'), async (req, res, next) => {
   await handlePdfTool('protect-pdf', req, res, next, async (files) => {
     const { password } = req.body;
     if (!password) throw createError('Password is required', 400);
@@ -104,7 +104,7 @@ pdfRouter.post('/protect', upload.single('file'), async (req, res, next) => {
 });
 
 // ─── Unlock PDF ───────────────────────────────────────────────────────────────
-pdfRouter.post('/unlock', upload.single('file'), async (req, res, next) => {
+pdfRouter.post('/unlock-pdf', upload.single('file'), async (req, res, next) => {
   await handlePdfTool('unlock-pdf', req, res, next, async (files) => {
     const { password } = req.body;
     return pdfService.unlockPdf(files[0].path, password);
@@ -112,7 +112,7 @@ pdfRouter.post('/unlock', upload.single('file'), async (req, res, next) => {
 });
 
 // ─── Reorder PDF ──────────────────────────────────────────────────────────────
-pdfRouter.post('/reorder', upload.single('file'), async (req, res, next) => {
+pdfRouter.post('/reorder-pdf', upload.single('file'), async (req, res, next) => {
   await handlePdfTool('reorder-pdf', req, res, next, async (files) => {
     const { order } = req.body;
     if (!order) throw createError('Page order is required', 400);

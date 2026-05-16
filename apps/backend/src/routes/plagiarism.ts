@@ -47,7 +47,7 @@ plagiarismRouter.post(
           text = fs.readFileSync(filePath, 'utf-8');
         } else if (mimetype === 'application/pdf') {
           const buffer = fs.readFileSync(filePath);
-          const data = await pdf(buffer);
+          const data = await (pdf as any)(buffer);
           text = data.text;
         } else if (mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
           const result = await mammoth.extractRawText({ path: filePath });
