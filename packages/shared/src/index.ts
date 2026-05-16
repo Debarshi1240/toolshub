@@ -69,4 +69,6 @@ export const PDF_TOOLS = [
   { id: 'protect-pdf', title: 'Protect PDF', description: 'Add password protection', icon: '🔒', color: 'from-green-500 to-teal-500' },
   { id: 'unlock-pdf', title: 'Unlock PDF', description: 'Remove password', icon: '🔓', color: 'from-amber-500 to-orange-500' },
   { id: 'reorder-pdf', title: 'Reorder Pages', description: 'Drag to reorder pages', icon: '📋', color: 'from-violet-500 to-purple-500' },
+  { id: 'compress-all', title: 'Compress All Files', description: 'Batch compress multiple PDFs at once', icon: '🗜️', color: 'from-emerald-500 to-teal-600' },
+  { id: 'create-zip', title: 'Create ZIP Folder', description: 'Package multiple files into a single ZIP archive', icon: '📦', color: 'from-blue-600 to-indigo-700' },
 ] as const;

@@ -47,10 +47,14 @@ export function PdfToolPage({
         let fileName = `file-${i + 1}`;
         try {
           const urlObj = new URL(url);
-          const pathParts = urlObj.pathname.split('/');
-          fileName = pathParts[pathParts.length - 1] || fileName;
+          const name = urlObj.pathname.split('/').pop();
+          if (name && name.includes('.')) {
+            fileName = name;
+          } else {
+            const ext = blob.type.split('/')[1]?.split('+')[0] || 'pdf';
+            fileName += `.${ext.replace('jpeg', 'jpg').replace('plain', 'txt')}`;
+          }
         } catch (e) { }
-        if (!fileName.includes('.')) fileName += '.pdf';
         zip.file(fileName, blob);
       });
       await Promise.all(promises);

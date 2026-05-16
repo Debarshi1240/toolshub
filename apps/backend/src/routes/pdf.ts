@@ -120,6 +120,24 @@ pdfRouter.post('/reorder', upload.single('file'), async (req, res, next) => {
   });
 });
 
+// ─── Create ZIP ───────────────────────────────────────────────────────────────
+pdfRouter.post('/create-zip', uploadMultiple.array('files', 50), async (req, res, next) => {
+  await handlePdfTool('create-zip', req, res, next, async (files) => {
+    return pdfService.createZip(files.map((f) => f.path));
+  });
+});
+
+// ─── Compress All ─────────────────────────────────────────────────────────────
+pdfRouter.post('/compress-all', uploadMultiple.array('files', 20), async (req, res, next) => {
+  await handlePdfTool('compress-all', req, res, next, async (files) => {
+    const outputPaths = [];
+    for (const file of files) {
+      outputPaths.push(await pdfService.compressPdf(file.path));
+    }
+    return outputPaths;
+  });
+});
+
 // ─── Helper: unified PDF tool handler ────────────────────────────────────────
 async function handlePdfTool(
   toolName: string,

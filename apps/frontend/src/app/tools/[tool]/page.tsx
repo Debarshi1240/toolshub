@@ -25,6 +25,8 @@ const TOOL_CONFIG: Record<string, {
   'protect-pdf':  {},
   'unlock-pdf':   {},
   'reorder-pdf':  {},
+  'compress-all': { multiple: true, maxFiles: 20, hint: 'Upload multiple PDFs to compress' },
+  'create-zip':   { multiple: true, maxFiles: 50, accept: { 'application/pdf': ['.pdf'], 'image/*': ['.jpg', '.jpeg', '.png', '.webp'] }, hint: 'Upload files to create a ZIP archive' },
 };
 
 export async function generateStaticParams() {

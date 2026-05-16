@@ -3,6 +3,7 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import archiver from 'archiver';
 
 const TEMP_DIR = path.join(__dirname, '..', '..', 'temp');
 if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
@@ -220,6 +221,24 @@ async function reorderPages(filePath: string, order: number[]): Promise<string> 
   fs.writeFileSync(outPath, await newDoc.save());
   return outPath;
 }
+// ─── Create ZIP ───────────────────────────────────────────────────────────────
+async function createZip(filePaths: string[]): Promise<string> {
+  const outPath = tempPath('zip');
+  const output = fs.createWriteStream(outPath);
+  const archive = archiver('zip', { zlib: { level: 9 } });
+
+  return new Promise((resolve, reject) => {
+    output.on('close', () => resolve(outPath));
+    archive.on('error', (err) => reject(err));
+    archive.pipe(output);
+
+    filePaths.forEach((fp) => {
+      archive.file(fp, { name: path.basename(fp) });
+    });
+
+    archive.finalize();
+  });
+}
 
 export const pdfService = {
   mergePdfs,
@@ -234,4 +253,5 @@ export const pdfService = {
   protectPdf,
   unlockPdf,
   reorderPages,
+  createZip,
 };
