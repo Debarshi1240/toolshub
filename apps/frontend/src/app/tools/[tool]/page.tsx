@@ -15,7 +15,7 @@ const TOOL_CONFIG: Record<string, {
 }> = {
   'merge-pdf':    { multiple: true, maxFiles: 20, hint: 'Upload multiple PDFs to merge' },
   'split-pdf':    {},
-  'compress-pdf': {},
+  'compress-pdf': { multiple: true, maxFiles: 20, hint: 'Upload one or multiple PDFs to compress' },
   'pdf-to-word':  {},
   'word-to-pdf':  { accept: { 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'], 'application/msword': ['.doc'] }, hint: 'Upload a .docx or .doc file' },
   'pdf-to-jpg':   {},

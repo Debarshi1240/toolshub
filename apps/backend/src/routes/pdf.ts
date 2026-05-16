@@ -34,9 +34,13 @@ pdfRouter.post('/split', upload.single('file'), async (req, res, next) => {
 });
 
 // ─── Compress PDF ─────────────────────────────────────────────────────────────
-pdfRouter.post('/compress', upload.single('file'), async (req, res, next) => {
+pdfRouter.post('/compress', uploadMultiple.array('files', 20), async (req, res, next) => {
   await handlePdfTool('compress-pdf', req, res, next, async (files) => {
-    return pdfService.compressPdf(files[0].path);
+    const outputPaths = [];
+    for (const file of files) {
+      outputPaths.push(await pdfService.compressPdf(file.path));
+    }
+    return outputPaths;
   });
 });
 

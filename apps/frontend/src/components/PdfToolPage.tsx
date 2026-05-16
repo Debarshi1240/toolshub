@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Download, CheckCircle } from 'lucide-react';
+import { Download, CheckCircle, Archive } from 'lucide-react';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 import { FileUploader } from '@/components/FileUploader';
 import { ProgressBar, Spinner } from '@/components/ProgressBar';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -31,6 +33,36 @@ export function PdfToolPage({
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<{ downloadUrls: string[]; fileCount: number } | null>(null);
+  const [isZipping, setIsZipping] = useState(false);
+
+  const handleCreateZip = async () => {
+    if (!result || !result.downloadUrls.length) return;
+    setIsZipping(true);
+    const toastId = toast.loading('Creating ZIP folder...');
+    try {
+      const zip = new JSZip();
+      const promises = result.downloadUrls.map(async (url, i) => {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        let fileName = `file-${i + 1}`;
+        try {
+          const urlObj = new URL(url);
+          const pathParts = urlObj.pathname.split('/');
+          fileName = pathParts[pathParts.length - 1] || fileName;
+        } catch (e) { }
+        if (!fileName.includes('.')) fileName += '.pdf';
+        zip.file(fileName, blob);
+      });
+      await Promise.all(promises);
+      const content = await zip.generateAsync({ type: 'blob' });
+      saveAs(content, `${toolId}-results.zip`);
+      toast.success('ZIP folder created!', { id: toastId });
+    } catch (err) {
+      toast.error('Failed to create ZIP folder. CORS or network error.', { id: toastId });
+    } finally {
+      setIsZipping(false);
+    }
+  };
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -162,6 +194,16 @@ export function PdfToolPage({
                 </a>
               ))}
             </div>
+            {result.fileCount > 1 && (
+              <button
+                onClick={handleCreateZip}
+                disabled={isZipping}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-brand-500/30 bg-brand-500/10 px-4 py-3 text-sm font-medium text-brand-400 hover:bg-brand-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isZipping ? <Spinner size="sm" /> : <Archive className="h-4 w-4" />}
+                {isZipping ? 'Zipping Files...' : 'Create ZIP Folder'}
+              </button>
+            )}
             <p className="mt-3 text-xs text-muted-foreground">⏱ Link expires in 1 hour</p>
           </motion.div>
         )}
