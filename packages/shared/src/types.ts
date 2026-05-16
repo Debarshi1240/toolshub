@@ -14,6 +14,8 @@ export type JobType =
   | 'protect-pdf'
   | 'unlock-pdf'
   | 'reorder-pdf'
+  | 'create-zip'
+  | 'compress-all'
   | 'download'
   | 'plagiarism';
 

@@ -4,13 +4,17 @@
     "module": "CommonJS",
     "lib": ["ES2020"],
     "outDir": "./dist",
-    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "declaration": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@toolshub/shared": ["../../packages/shared/src/index.ts"]
+    },
+    "types": ["node", "express", "multer"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
